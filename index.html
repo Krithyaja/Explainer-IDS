@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iterative Deepening Search (IDS) Playground</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- MathJax for TeX math typesetting -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for control panels and logs */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Canvas glowing highlight classes */
+        .glow-active {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+        }
+        /* Native fullscreen container fix */
+        #visualizer-canvas-container:fullscreen {
+            width: 100vw !important;
+            height: 100vh !important;
+            padding: 0 !important;
+            background-color: #020617 !important;
+        }
+    </style>
+</head>
+<body class="h-full text-slate-200 flex flex-col min-h-screen overflow-x-hidden">
+
+    <!-- Top Header Navigation Bar -->
+    <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 sticky top-0 z-40 shadow-xl">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600/20 p-2.5 rounded-xl border border-indigo-500/30 text-indigo-400">
+                <i class="fa-solid fa-sitemap text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                    Iterative Deepening Search <span class="bg-indigo-500/10 text-indigo-400 text-xs px-2 py-0.5 rounded-md border border-indigo-500/20">IDS</span>
+                </h1>
+                <p class="text-xs text-slate-400">Interactive Algorithm Visualizer & Educator</p>
+            </div>
+        </div>
+
+        <!-- Quick Tabs / Nav -->
+        <div class="flex items-center space-x-2 bg-slate-800/60 p-1 rounded-xl border border-slate-700/50">
+            <button onclick="switchTab('visualizer')" id="tab-btn-visualizer" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all bg-indigo-600 text-white shadow">
+                <i class="fa-solid fa-play mr-1.5"></i> Visualizer
+            </button>
+            <button onclick="switchTab('theory')" id="tab-btn-theory" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">
+                <i class="fa-solid fa-book-open mr-1.5"></i> Theory & Complexity
+            </button>
+            <button onclick="switchTab('qa')" id="tab-btn-qa" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">
+                <i class="fa-solid fa-comments mr-1.5"></i> Q&A / Doubts
+            </button>
+            <button onclick="switchTab('quiz')" id="tab-btn-quiz" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white">
+                <i class="fa-solid fa-pen-to-square mr-1.5"></i> Practice & Quiz
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Body -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- VISUALIZER VIEW -->
+        <div id="view-visualizer" class="lg:col-span-12 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Left Controls & Configuration Panel (4 Cols) -->
+            <div class="lg:col-span-4 space-y-6 flex flex-col">
+                
+                <!-- Algorithm Controls Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                        <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-indigo-400"></i> Control Panel
+                        </h2>
+                        <span id="status-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                            Ready
+                        </span>
+                    </div>
+
+                    <!-- Playback Buttons -->
+                    <div class="grid grid-cols-4 gap-2">
+                        <button id="btn-play" onclick="togglePlay()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-3 rounded-xl text-xs transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-1.5 col-span-2">
+                            <i id="play-icon" class="fa-solid fa-play"></i> <span id="play-text">Play</span>
+                        </button>
+                        <button onclick="stepForward()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 px-3 rounded-xl text-xs transition border border-slate-700 flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-step-forward"></i> Step
+                        </button>
+                        <button onclick="resetSearch()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-2 px-3 rounded-xl text-xs transition border border-slate-700 flex items-center justify-center gap-1">
+                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        </button>
+                    </div>
+
+                    <!-- Speed & Parameters -->
+                    <div class="space-y-3 pt-2">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-400 font-medium">Animation Speed</span>
+                                <span id="speed-label" class="text-indigo-400 font-mono font-semibold">1.0x</span>
+                            </div>
+                            <input type="range" id="speed-slider" min="0.2" max="3" step="0.1" value="1" oninput="updateSpeed(this.value)" class="w-full accent-indigo-500 bg-slate-800 rounded-lg h-1.5 cursor-pointer">
+                        </div>
+
+                        <!-- Target Node Selection -->
+                        <div>
+                            <label class="text-xs text-slate-400 font-medium block mb-1">Target Node (Goal)</label>
+                            <div class="flex gap-2">
+                                <select id="target-select" onchange="changeTargetNode(this.value)" class="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl px-3 py-2 w-full focus:outline-none focus:border-indigo-500 font-mono">
+                                    <!-- Options populated dynamically -->
+                                </select>
+                                <button onclick="pickRandomTarget()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 rounded-xl border border-slate-700 transition" title="Random Target">
+                                    <i class="fa-solid fa-dice"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tree Customization Configuration -->
+                    <div class="pt-3 border-t border-slate-800 space-y-3">
+                        <div class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center justify-between">
+                            <span>Tree Architecture</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[11px] text-slate-400 font-medium block mb-1">Max Depth ($d$)</label>
+                                <select id="depth-select" onchange="updateTreeTopology()" class="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl px-2.5 py-1.5 w-full focus:outline-none focus:border-indigo-500 font-mono">
+                                    <option value="2">Depth 2</option>
+                                    <option value="3" selected>Depth 3</option>
+                                    <option value="4">Depth 4</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-[11px] text-slate-400 font-medium block mb-1">Branch Factor ($b$)</label>
+                                <select id="branch-select" onchange="updateTreeTopology()" class="bg-slate-950 border border-slate-800 text-slate-200 text-xs rounded-xl px-2.5 py-1.5 w-full focus:outline-none focus:border-indigo-500 font-mono">
+                                    <option value="2" selected>Binary (2)</option>
+                                    <option value="3">Ternary (3)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Execution Statistics Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+                    <h2 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
+                        <i class="fa-solid fa-chart-simple text-indigo-400"></i> Execution Metrics
+                    </h2>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-950/60 border border-slate-800/80 p-3 rounded-xl">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block mb-0.5">Current Limit ($L$)</span>
+                            <span id="metric-limit" class="text-lg font-bold text-indigo-400 font-mono">0</span>
+                        </div>
+                        <div class="bg-slate-950/60 border border-slate-800/80 p-3 rounded-xl">
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block mb-0.5">Nodes Visited</span>
+                            <span id="metric-visited" class="text-lg font-bold text-emerald-400 font-mono">0</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/60 border border-slate-800/80 p-3 rounded-xl space-y-1">
+                        <span class="text-[10px] text-slate-400 uppercase font-semibold block">Path to Current / Goal</span>
+                        <div id="metric-path" class="text-xs font-mono text-slate-200 truncate font-semibold">
+                            None
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Color Key / Legend -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl text-xs space-y-2">
+                    <span class="font-bold text-slate-300 uppercase tracking-wider text-[10px] block mb-1">Canvas Node Legend</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-slate-800 border border-slate-600"></span>
+                            <span class="text-slate-400">Unvisited</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-indigo-500 border border-indigo-300"></span>
+                            <span class="text-indigo-300 font-medium">Currently Visited</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 border border-emerald-300"></span>
+                            <span class="text-emerald-300 font-medium">Goal Target</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-amber-500/20 border border-amber-500"></span>
+                            <span class="text-amber-400">Depth Limit Cut</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Interactive Tree Canvas & Narrative (8 Cols) -->
+            <div class="lg:col-span-8 space-y-6 flex flex-col">
+                
+                <!-- Canvas Container -->
+                <div id="visualizer-canvas-container" class="relative bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex-1 flex flex-col min-h-[420px] lg:min-h-[480px]">
+                    
+                    <!-- Canvas Top Bar -->
+                    <div class="flex justify-between items-center mb-3 px-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-diagram-project text-indigo-400"></i> Interactive Search Tree
+                            </span>
+                            <span class="text-[11px] text-slate-500 hidden sm:inline">(Click node to set as Target)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <!-- Fullscreen Toggle Button -->
+                            <button onclick="toggleFullscreen()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5">
+                                <i id="fullscreen-icon" class="fa-solid fa-expand"></i> <span id="fullscreen-text">Full Screen</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Graphic Viewport -->
+                    <div class="relative flex-1 w-full bg-slate-950/80 rounded-xl border border-slate-800/80 overflow-hidden">
+                        <canvas id="treeCanvas" class="w-full h-full cursor-pointer"></canvas>
+                        
+                        <!-- Floating Controls overlay for Fullscreen mode (Top Right) -->
+                        <div id="fs-top-controls" class="hidden absolute top-4 right-4 z-50 bg-slate-900/90 backdrop-blur border border-slate-700/80 p-2 rounded-2xl shadow-2xl flex items-center gap-2">
+                            <button onclick="togglePlay()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-1.5 px-3 rounded-xl text-xs transition flex items-center gap-1.5">
+                                <i id="fs-play-icon" class="fa-solid fa-play"></i> <span id="fs-play-text">Play</span>
+                            </button>
+                            <button onclick="resetSearch()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-1.5 px-3 rounded-xl text-xs transition border border-slate-700 flex items-center gap-1">
+                                <i class="fa-solid fa-rotate-left"></i> Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Educational Step Narrative Box -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+                            <i class="fa-solid fa-terminal"></i> Step Narrative
+                        </span>
+                        <span id="step-count-text" class="text-[11px] font-mono text-slate-400">Step 0 / 0</span>
+                    </div>
+                    <div id="narrative-box" class="bg-slate-950 border border-slate-800/80 rounded-xl p-3.5 text-xs text-slate-300 min-h-[64px] flex items-center font-mono leading-relaxed">
+                        Click 'Play' or 'Step' to begin Iterative Deepening Search.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- THEORY & COMPARISON VIEW (Hidden by default) -->
+        <div id="view-theory" class="lg:col-span-12 hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl space-y-8">
+                
+                <!-- Introduction -->
+                <div class="space-y-3">
+                    <h2 class="text-2xl font-bold text-white flex items-center gap-2.5">
+                        <i class="fa-solid fa-graduation-cap text-indigo-400"></i> What is Iterative Deepening Search (IDS)?
+                    </h2>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        <strong>Iterative Deepening Search (IDS)</strong>—also known as Iterative Deepening Depth-First Search (IDDFS)—is an uninformed search algorithm that combines the memory efficiency of Depth-First Search (DFS) with the completeness and optimality of Breadth-First Search (BFS).
+                    </p>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        IDS operates by running repeated Depth-First Searches with gradually increasing depth limits ($L = 0, 1, 2, 3, \dots$). It halts as soon as it discovers a target goal node at the shallowest depth.
+                    </p>
+                </div>
+
+                <!-- Comparison Table -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-bold text-white">Algorithm Comparison Matrix</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-950 border-b border-slate-800 text-slate-300 font-semibold">
+                                    <th class="p-3">Algorithm</th>
+                                    <th class="p-3">Time Complexity</th>
+                                    <th class="p-3">Space Complexity</th>
+                                    <th class="p-3">Complete?</th>
+                                    <th class="p-3">Optimal?</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800 text-slate-300">
+                                <tr class="hover:bg-slate-800/40">
+                                    <td class="p-3 font-bold text-indigo-400">Breadth-First Search (BFS)</td>
+                                    <td class="p-3 font-mono">O(b^d)</td>
+                                    <td class="p-3 font-mono text-rose-400">O(b^d) (High RAM)</td>
+                                    <td class="p-3 text-emerald-400">Yes</td>
+                                    <td class="p-3 text-emerald-400">Yes (unit costs)</td>
+                                </tr>
+                                <tr class="hover:bg-slate-800/40">
+                                    <td class="p-3 font-bold text-indigo-400">Depth-First Search (DFS)</td>
+                                    <td class="p-3 font-mono">O(b^m)</td>
+                                    <td class="p-3 font-mono text-emerald-400">O(b · m) (Low RAM)</td>
+                                    <td class="p-3 text-rose-400">No (infinite loops)</td>
+                                    <td class="p-3 text-rose-400">No</td>
+                                </tr>
+                                <tr class="hover:bg-slate-800/40 bg-indigo-950/20">
+                                    <td class="p-3 font-bold text-indigo-300 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-star text-amber-400"></i> Iterative Deepening (IDS)
+                                    </td>
+                                    <td class="p-3 font-mono text-indigo-300">O(b^d)</td>
+                                    <td class="p-3 font-mono text-emerald-400 font-bold">O(b · d) (Low RAM)</td>
+                                    <td class="p-3 text-emerald-400 font-bold">Yes</td>
+                                    <td class="p-3 text-emerald-400 font-bold">Yes (unit costs)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Math & Overhead Explanation -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-800">
+                    <div class="space-y-2 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                        <h4 class="text-sm font-bold text-indigo-300">Why isn't re-visiting nodes too wasteful?</h4>
+                        <p class="text-xs text-slate-300 leading-relaxed">
+                            In an exponential search tree, the vast majority of nodes reside at the bottom level. Re-generating upper nodes incurs minimal overhead. For $b=10$ and $d=5$:
+                        </p>
+                        <div class="font-mono text-[11px] text-slate-400 bg-slate-900 p-2.5 rounded-lg border border-slate-800 mt-2">
+                            N(BFS) = 1 + 10 + 100 + 1000 + 10000 = 11,111<br>
+                            N(IDS) = 5(1) + 4(10) + 3(100) + 2(1000) + 1(10000) = 12,345<br>
+                            <span class="text-indigo-400 font-semibold">Overhead ≈ 11% extra node visits!</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                        <h4 class="text-sm font-bold text-indigo-300">Key Takeaways</h4>
+                        <ul class="text-xs text-slate-300 space-y-2 list-disc list-inside">
+                            <li>Combines <strong>BFS completeness</strong> with <strong>DFS linear space requirements</strong>.</li>
+                            <li>Ideal for trees with large search depth or unknown solution depths.</li>
+                            <li>Preferred method when search space is huge and memory is bounded.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Q&A / DOUBTS VIEW (Hidden by default) -->
+        <div id="view-qa" class="lg:col-span-12 hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl flex flex-col min-h-[600px] h-[calc(100vh-180px)]">
+                
+                <!-- Chat Header -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-indigo-600/20 p-2.5 rounded-xl border border-indigo-500/30 text-indigo-400">
+                            <i class="fa-solid fa-robot text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                                IDS Assistant Bot
+                                <span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full border border-emerald-500/30 font-semibold">Online</span>
+                            </h2>
+                            <p class="text-xs text-slate-400">Ask any doubt about Iterative Deepening Search, complexities, edge cases, or algorithm comparisons.</p>
+                        </div>
+                    </div>
+                    
+                    <button onclick="clearChat()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5 self-start sm:self-center">
+                        <i class="fa-solid fa-trash-can"></i> Clear Chat
+                    </button>
+                </div>
+
+                <!-- Chat History Area -->
+                <div id="chat-messages" class="flex-1 overflow-y-auto space-y-4 pr-2 mb-4">
+                    <!-- Bot Welcome Message -->
+                    <div class="flex gap-3 items-start max-w-3xl">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-600/30 border border-indigo-500/40 text-indigo-400 flex items-center justify-center shrink-0 text-sm font-bold">
+                            <i class="fa-solid fa-robot"></i>
+                        </div>
+                        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-slate-200 leading-relaxed shadow-lg space-y-2">
+                            <p>👋 Hello! I am your <strong>IDS Tutor Bot</strong>. I can clarify any doubts regarding <strong>Iterative Deepening Search</strong>, time/space complexity, comparisons with BFS/DFS, or step-by-step tree traversal rules.</p>
+                            <p class="text-slate-400 text-[11px]">Click one of the suggested prompts below or type your own question!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Prompt Chips -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-3 mb-2 text-xs scrollbar-none">
+                    <span class="text-slate-500 font-medium shrink-0 text-[11px]">Quick Doubts:</span>
+                    <button onclick="sendQuickPrompt('Why is node revisiting not slow in IDS?')" class="bg-slate-950 hover:bg-indigo-950/40 border border-slate-800 hover:border-indigo-500/40 text-indigo-300 px-3 py-1.5 rounded-xl whitespace-nowrap transition text-[11px]">
+                        ⚡ Why is node revisiting not slow?
+                    </button>
+                    <button onclick="sendQuickPrompt('When should I choose IDS over BFS or DFS?')" class="bg-slate-950 hover:bg-indigo-950/40 border border-slate-800 hover:border-indigo-500/40 text-indigo-300 px-3 py-1.5 rounded-xl whitespace-nowrap transition text-[11px]">
+                        🤔 IDS vs BFS vs DFS: When to choose?
+                    </button>
+                    <button onclick="sendQuickPrompt('What is the Space Complexity of IDS and why?')" class="bg-slate-950 hover:bg-indigo-950/40 border border-slate-800 hover:border-indigo-500/40 text-indigo-300 px-3 py-1.5 rounded-xl whitespace-nowrap transition text-[11px]">
+                        📐 Space Complexity O(b·d) explained
+                    </button>
+                    <button onclick="sendQuickPrompt('Is IDS optimal for weighted graphs?')" class="bg-slate-950 hover:bg-indigo-950/40 border border-slate-800 hover:border-indigo-500/40 text-indigo-300 px-3 py-1.5 rounded-xl whitespace-nowrap transition text-[11px]">
+                        ⚖️ Does IDS work on weighted graphs?
+                    </button>
+                </div>
+
+                <!-- Chat Input Form -->
+                <form onsubmit="handleChatSubmit(event)" class="flex gap-2">
+                    <input type="text" id="chat-input" placeholder="Type your doubt here (e.g., Explain time complexity overhead)..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-500">
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-5 py-2.5 rounded-xl text-xs transition shadow-lg shadow-indigo-600/30 flex items-center gap-1.5">
+                        <i class="fa-solid fa-paper-plane"></i> Send
+                    </button>
+                </form>
+
+            </div>
+        </div>
+
+        <!-- QUIZ & PRACTICE VIEW -->
+        <div id="view-quiz" class="lg:col-span-12 hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left Challenge Setup & Inputs (5 cols) -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-circle-question text-indigo-400"></i> IDS Practice Problem
+                        </h2>
+                        <button onclick="generateNewQuizQuestion()" class="px-3 py-1.5 rounded-xl bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 text-xs font-semibold border border-indigo-500/30 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrows-rotate"></i> New Question
+                        </button>
+                    </div>
+
+                    <!-- Question Prompt Box -->
+                    <div id="quiz-question-box" class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 text-xs text-slate-200 space-y-2 mb-5">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <!-- Student Answer Form -->
+                    <form id="quiz-form" onsubmit="submitQuizAnswer(event)" class="space-y-4">
+                        <!-- Input 1: Path -->
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-slate-300">1. Path to Goal Node</label>
+                            <input type="text" id="quiz-input-path" placeholder="e.g. A -> B -> E or A,B,E" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono">
+                            <p class="text-[11px] text-slate-500">Enter comma or arrow separated node labels.</p>
+                        </div>
+
+                        <!-- Input 2: Total Visited Nodes -->
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-slate-300">2. Total Node Visits (Cumulative across all iterations)</label>
+                            <input type="number" id="quiz-input-visited" placeholder="e.g. 7" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono">
+                        </div>
+
+                        <!-- Input 3: Iteration Depth Limit -->
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold text-slate-300">3. Depth Limit ($L$) when Goal was Found</label>
+                            <input type="number" id="quiz-input-depth" placeholder="e.g. 2" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-200 focus:outline-none focus:border-indigo-500 font-mono">
+                        </div>
+
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2.5 rounded-xl text-sm transition shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 mt-2">
+                            <i class="fa-solid fa-check"></i> Check My Solution
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Solution Feedback Panel -->
+                <div id="quiz-feedback-box" class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-3">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Right Quiz Canvas (7 cols) -->
+            <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col min-h-[480px]">
+                <div class="flex justify-between items-center mb-3 px-2">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                        <i class="fa-solid fa-sitemap text-indigo-400"></i> Problem Target Tree
+                    </h3>
+                    <span id="quiz-target-badge" class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-mono text-xs font-semibold">
+                        Target Node: G
+                    </span>
+                </div>
+                <div class="relative flex-1 w-full bg-slate-950/80 rounded-xl border border-slate-800/80 overflow-hidden">
+                    <canvas id="quizTreeCanvas" class="w-full h-full"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JavaScript Core State & Visualizer Code -->
+    <script>
+        /* --- Global Application State --- */
+        let treeData = {};
+        let targetNodeId = 'Node_G';
+        let currentMaxDepth = 3;
+        let currentBranchingFactor = 2;
+
+        let steps = [];
+        let currentStepIndex = 0;
+        let isPlaying = false;
+        let animationTimer = null;
+        let speedMultiplier = 1.0;
+
+        let canvas = null;
+        let ctx = null;
+
+        /* --- Alphabetic Naming Converter --- */
+        function getAlphabetLabel(index) {
+            let label = "";
+            let i = index;
+            while (i >= 0) {
+                label = String.fromCharCode((i % 26) + 65) + label;
+                i = Math.floor(i / 26) - 1;
+            }
+            return label;
+        }
+
+        /* --- Dynamic Tree Data Generator --- */
+        function generateTreeData(maxDepth, branchingFactor) {
+            const tree = {};
+            let nodeCounter = 0;
+            
+            function buildNode(depth, id) {
+                const label = getAlphabetLabel(nodeCounter++);
+                tree[id] = {
+                    id: id,
+                    label: label,
+                    depth: depth,
+                    children: []
+                };
+
+                if (depth < maxDepth) {
+                    for (let b = 0; b < branchingFactor; b++) {
+                        const childId = `Node_${label}_${b}`;
+                        tree[id].children.push(childId);
+                        buildNode(depth + 1, childId);
+                    }
+                }
+            }
+
+            buildNode(0, 'Node_A');
+            return tree;
+        }
+
+        /* --- Rebuild Topology Callback --- */
+        function updateTreeTopology() {
+            currentMaxDepth = parseInt(document.getElementById('depth-select').value);
+            currentBranchingFactor = parseInt(document.getElementById('branch-select').value);
+            treeData = generateTreeData(currentMaxDepth, currentBranchingFactor);
+            
+            // Validate target node
+            const keys = Object.keys(treeData);
+            if (!treeData[targetNodeId]) {
+                targetNodeId = keys[keys.length - 1];
+            }
+
+            populateTargetSelectOptions();
+            generateIDSSteps();
+            resetSearch();
+        }
+
+        function populateTargetSelectOptions() {
+            const select = document.getElementById('target-select');
+            select.innerHTML = '';
+            for (let id in treeData) {
+                const node = treeData[id];
+                const opt = document.createElement('option');
+                opt.value = id;
+                opt.text = `Node ${node.label} (Depth ${node.depth})`;
+                if (id === targetNodeId) opt.selected = true;
+                select.appendChild(opt);
+            }
+        }
+
+        function changeTargetNode(newId) {
+            targetNodeId = newId;
+            document.getElementById('target-select').value = newId;
+            generateIDSSteps();
+            resetSearch();
+        }
+
+        function pickRandomTarget() {
+            const keys = Object.keys(treeData);
+            const randomKey = keys[Math.floor(Math.random() * keys.length)];
+            changeTargetNode(randomKey);
+        }
+
+        /* --- Precompute IDS Algorithm Step Trace --- */
+        function generateIDSSteps() {
+            steps = [];
+            let totalVisitedCount = 0;
+            let goalFound = false;
+
+            // Step 0: Initial state
+            steps.push({
+                currentNode: null,
+                depthLimit: 0,
+                totalVisited: 0,
+                pathSoFar: [],
+                status: 'ready',
+                narrative: `Initialized Iterative Deepening Search. Target node is set to '${treeData[targetNodeId].label}'.`
+            });
+
+            for (let limit = 0; limit <= currentMaxDepth; limit++) {
+                if (goalFound) break;
+
+                // Start of iteration limit banner
+                steps.push({
+                    currentNode: null,
+                    depthLimit: limit,
+                    totalVisited: totalVisitedCount,
+                    pathSoFar: [],
+                    status: 'iter_start',
+                    narrative: `=== Starting Iteration with Depth Limit L = ${limit} ===`
+                });
+
+                function dfs(nodeId, currentDepth, currentPath) {
+                    if (goalFound) return;
+
+                    totalVisitedCount++;
+                    const nodeLabel = treeData[nodeId].label;
+                    const path = [...currentPath, nodeId];
+
+                    if (nodeId === targetNodeId) {
+                        goalFound = true;
+                        steps.push({
+                            currentNode: nodeId,
+                            depthLimit: limit,
+                            totalVisited: totalVisitedCount,
+                            pathSoFar: path,
+                            status: 'goal_found',
+                            narrative: `GOAL FOUND! Reached target Node '${nodeLabel}' at Depth ${currentDepth} within limit L = ${limit}!`
+                        });
+                        return;
+                    }
+
+                    if (currentDepth >= limit) {
+                        steps.push({
+                            currentNode: nodeId,
+                            depthLimit: limit,
+                            totalVisited: totalVisitedCount,
+                            pathSoFar: path,
+                            status: 'depth_limit_hit',
+                            narrative: `Visited Node '${nodeLabel}' at Depth ${currentDepth}. Reached depth limit L = ${limit}, backtracking...`
+                        });
+                        return;
+                    }
+
+                    steps.push({
+                        currentNode: nodeId,
+                        depthLimit: limit,
+                        totalVisited: totalVisitedCount,
+                        pathSoFar: path,
+                        status: 'exploring',
+                        narrative: `Exploring Node '${nodeLabel}' at Depth ${currentDepth} (Limit L = ${limit}). Expanding children...`
+                    });
+
+                    for (let childId of treeData[nodeId].children) {
+                        if (!goalFound) {
+                            dfs(childId, currentDepth + 1, path);
+                        }
+                    }
+                }
+
+                dfs('Node_A', 0, []);
+            }
+
+            if (!goalFound) {
+                steps.push({
+                    currentNode: null,
+                    depthLimit: currentMaxDepth,
+                    totalVisited: totalVisitedCount,
+                    pathSoFar: [],
+                    status: 'not_found',
+                    narrative: `Target node was not found within maximum depth limit d = ${currentMaxDepth}.`
+                });
+            }
+        }
+
+        /* --- Responsive Canvas Coordinates Computation --- */
+        function getNodeCoordinates() {
+            if (!canvas) return {};
+            const width = canvas.width;
+            const height = canvas.height;
+            const coords = {};
+
+            const levels = {};
+            for (let id in treeData) {
+                const node = treeData[id];
+                if (!levels[node.depth]) levels[node.depth] = [];
+                levels[node.depth].push(id);
+            }
+
+            const totalLevels = currentMaxDepth + 1;
+            const verticalPadding = 50;
+            const availableHeight = height - verticalPadding * 2;
+            const levelSpacing = totalLevels > 1 ? availableHeight / (totalLevels - 1) : 0;
+
+            for (let depth = 0; depth <= currentMaxDepth; depth++) {
+                const nodesAtLevel = levels[depth] || [];
+                const count = nodesAtLevel.length;
+                const y = verticalPadding + depth * levelSpacing;
+
+                nodesAtLevel.forEach((nodeId, idx) => {
+                    const x = (width / (count + 1)) * (idx + 1);
+                    coords[nodeId] = { x, y };
+                });
+            }
+
+            return coords;
+        }
+
+        /* --- Canvas Rendering Routine --- */
+        function renderCanvas() {
+            if (!canvas || !ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const coords = getNodeCoordinates();
+            const currentStep = steps[currentStepIndex] || steps[0];
+            const activeNode = currentStep.currentNode;
+            const activePath = currentStep.pathSoFar || [];
+
+            // Draw Connection Edges
+            for (let parentId in treeData) {
+                const parent = treeData[parentId];
+                const pCoord = coords[parentId];
+
+                parent.children.forEach(childId => {
+                    const cCoord = coords[childId];
+                    const isInActivePath = activePath.includes(parentId) && activePath.includes(childId);
+
+                    ctx.beginPath();
+                    ctx.moveTo(pCoord.x, pCoord.y);
+                    ctx.lineTo(cCoord.x, cCoord.y);
+
+                    if (isInActivePath) {
+                        ctx.strokeStyle = '#6366f1'; // Indigo path line
+                        ctx.lineWidth = 4;
+                    } else {
+                        ctx.strokeStyle = '#334155'; // Dark slate line
+                        ctx.lineWidth = 2;
+                    }
+                    ctx.stroke();
+                });
+            }
+
+            // Draw Nodes
+            const baseRadius = currentMaxDepth > 3 ? 16 : 20;
+
+            for (let nodeId in treeData) {
+                const node = treeData[nodeId];
+                const coord = coords[nodeId];
+
+                const isTarget = (nodeId === targetNodeId);
+                const isActive = (nodeId === activeNode);
+                const isGoalFound = (currentStep.status === 'goal_found' && isTarget && isActive);
+                const isLimitHit = (isActive && currentStep.status === 'depth_limit_hit');
+                const isExceedingCurrentLimit = (node.depth > currentStep.depthLimit);
+
+                ctx.beginPath();
+                ctx.arc(coord.x, coord.y, baseRadius, 0, 2 * Math.PI);
+
+                // Styling logic
+                if (isGoalFound) {
+                    ctx.fillStyle = '#10b981'; // Emerald Goal
+                    ctx.strokeStyle = '#34d399';
+                    ctx.lineWidth = 4;
+                } else if (isActive) {
+                    if (isLimitHit) {
+                        ctx.fillStyle = '#f59e0b'; // Amber Limit Hit
+                        ctx.strokeStyle = '#fbbf24';
+                    } else {
+                        ctx.fillStyle = '#6366f1'; // Indigo Active
+                        ctx.strokeStyle = '#818cf8';
+                    }
+                    ctx.lineWidth = 4;
+                } else if (isTarget) {
+                    ctx.fillStyle = '#065f46'; // Target Outline Goal
+                    ctx.strokeStyle = '#34d399';
+                    ctx.lineWidth = 3;
+                } else if (isExceedingCurrentLimit) {
+                    ctx.fillStyle = '#0f172a'; // Dimmed out beyond limit
+                    ctx.strokeStyle = '#1e293b';
+                    ctx.lineWidth = 1.5;
+                } else {
+                    ctx.fillStyle = '#1e293b'; // Normal Unvisited
+                    ctx.strokeStyle = '#475569';
+                    ctx.lineWidth = 2;
+                }
+
+                ctx.fill();
+                ctx.stroke();
+
+                // Draw Alphabetic Label inside Node
+                ctx.fillStyle = isExceedingCurrentLimit ? '#475569' : '#ffffff';
+                ctx.font = `bold ${baseRadius * 0.75}px Inter, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(node.label, coord.x, coord.y);
+            }
+        }
+
+        /* --- UI Render & Metric Updates --- */
+        function updateUI() {
+            const step = steps[currentStepIndex] || steps[0];
+
+            document.getElementById('metric-limit').innerText = step.depthLimit;
+            document.getElementById('metric-visited').innerText = step.totalVisited;
+
+            const pathLabels = step.pathSoFar.map(id => treeData[id].label);
+            document.getElementById('metric-path').innerText = pathLabels.length > 0 ? pathLabels.join(' → ') : 'None';
+
+            document.getElementById('step-count-text').innerText = `Step ${currentStepIndex} / ${steps.length - 1}`;
+            document.getElementById('narrative-box').innerText = step.narrative;
+
+            const statusBadge = document.getElementById('status-badge');
+            if (step.status === 'goal_found') {
+                statusBadge.innerText = 'Goal Found!';
+                statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+            } else if (isPlaying) {
+                statusBadge.innerText = 'Running...';
+                statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30';
+            } else {
+                statusBadge.innerText = 'Paused';
+                statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-800 text-slate-300 border border-slate-700';
+            }
+
+            renderCanvas();
+        }
+
+        /* --- Playback Control Logic --- */
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            updatePlayButtons();
+
+            if (isPlaying) {
+                if (currentStepIndex >= steps.length - 1) {
+                    currentStepIndex = 0;
+                }
+                runAnimation();
+            } else {
+                clearTimeout(animationTimer);
+            }
+        }
+
+        function updatePlayButtons() {
+            const icon = document.getElementById('play-icon');
+            const text = document.getElementById('play-text');
+            const fsIcon = document.getElementById('fs-play-icon');
+            const fsText = document.getElementById('fs-play-text');
+
+            if (isPlaying) {
+                if (icon) icon.className = 'fa-solid fa-pause';
+                if (text) text.innerText = 'Pause';
+                if (fsIcon) fsIcon.className = 'fa-solid fa-pause';
+                if (fsText) fsText.innerText = 'Pause';
+            } else {
+                if (icon) icon.className = 'fa-solid fa-play';
+                if (text) text.innerText = 'Play';
+                if (fsIcon) fsIcon.className = 'fa-solid fa-play';
+                if (fsText) fsText.innerText = 'Play';
+            }
+        }
+
+        function runAnimation() {
+            if (!isPlaying) return;
+            if (currentStepIndex < steps.length - 1) {
+                currentStepIndex++;
+                updateUI();
+                const delay = 600 / speedMultiplier;
+                animationTimer = setTimeout(runAnimation, delay);
+            } else {
+                isPlaying = false;
+                updatePlayButtons();
+                updateUI();
+            }
+        }
+
+        function stepForward() {
+            if (isPlaying) {
+                isPlaying = false;
+                updatePlayButtons();
+                clearTimeout(animationTimer);
+            }
+            if (currentStepIndex < steps.length - 1) {
+                currentStepIndex++;
+                updateUI();
+            }
+        }
+
+        function resetSearch() {
+            isPlaying = false;
+            clearTimeout(animationTimer);
+            updatePlayButtons();
+            currentStepIndex = 0;
+            updateUI();
+        }
+
+        function updateSpeed(val) {
+            speedMultiplier = parseFloat(val);
+            document.getElementById('speed-label').innerText = `${speedMultiplier.toFixed(1)}x`;
+        }
+
+        /* --- Resize Canvas Layout Handler --- */
+        function resizeCanvas() {
+            if (!canvas) return;
+            const container = canvas.parentElement;
+            if (container) {
+                canvas.width = container.clientWidth;
+                canvas.height = container.clientHeight;
+                renderCanvas();
+            }
+        }
+
+        /* --- Fullscreen Feature Implementation --- */
+        function toggleFullscreen() {
+            const container = document.getElementById('visualizer-canvas-container');
+            const fsTopControls = document.getElementById('fs-top-controls');
+            const fsIcon = document.getElementById('fullscreen-icon');
+            const fsText = document.getElementById('fullscreen-text');
+
+            if (!document.fullscreenElement) {
+                if (container.requestFullscreen) {
+                    container.requestFullscreen();
+                }
+                fsTopControls.classList.remove('hidden');
+                if (fsIcon) fsIcon.className = 'fa-solid fa-compress';
+                if (fsText) fsText.innerText = 'Exit Fullscreen';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+                fsTopControls.classList.add('hidden');
+                if (fsIcon) fsIcon.className = 'fa-solid fa-expand';
+                if (fsText) fsText.innerText = 'Full Screen';
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const fsTopControls = document.getElementById('fs-top-controls');
+            const fsIcon = document.getElementById('fullscreen-icon');
+            const fsText = document.getElementById('fullscreen-text');
+
+            if (!document.fullscreenElement) {
+                fsTopControls.classList.add('hidden');
+                if (fsIcon) fsIcon.className = 'fa-solid fa-expand';
+                if (fsText) fsText.innerText = 'Full Screen';
+            }
+            setTimeout(resizeCanvas, 100);
+        });
+
+        /* --- Tab Switcher Logic --- */
+        function switchTab(tab) {
+            const visualizerView = document.getElementById('view-visualizer');
+            const theoryView = document.getElementById('view-theory');
+            const qaView = document.getElementById('view-qa');
+            const quizView = document.getElementById('view-quiz');
+
+            const btnVisualizer = document.getElementById('tab-btn-visualizer');
+            const btnTheory = document.getElementById('tab-btn-theory');
+            const btnQa = document.getElementById('tab-btn-qa');
+            const btnQuiz = document.getElementById('tab-btn-quiz');
+
+            const inactiveClass = "px-4 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-white";
+            const activeClass = "px-4 py-1.5 rounded-lg text-xs font-semibold transition-all bg-indigo-600 text-white shadow";
+
+            visualizerView.classList.add('hidden');
+            theoryView.classList.add('hidden');
+            qaView.classList.add('hidden');
+            quizView.classList.add('hidden');
+
+            btnVisualizer.className = inactiveClass;
+            btnTheory.className = inactiveClass;
+            btnQa.className = inactiveClass;
+            btnQuiz.className = inactiveClass;
+
+            if (tab === 'visualizer') {
+                visualizerView.classList.remove('hidden');
+                btnVisualizer.className = activeClass;
+                setTimeout(resizeCanvas, 50);
+            } else if (tab === 'theory') {
+                theoryView.classList.remove('hidden');
+                btnTheory.className = activeClass;
+            } else if (tab === 'qa') {
+                qaView.classList.remove('hidden');
+                btnQa.className = activeClass;
+            } else if (tab === 'quiz') {
+                quizView.classList.remove('hidden');
+                btnQuiz.className = activeClass;
+                if (!quizProblem) generateNewQuizQuestion();
+                setTimeout(resizeQuizCanvas, 50);
+            }
+        }
+
+        /* --- Quiz State & Logic --- */
+        let quizProblem = null;
+        let quizCanvas = null;
+        let quizCtx = null;
+
+        /* --- Interactive Q&A Assistant Bot Logic --- */
+        const botKnowledgeBase = [
+            {
+                keywords: ['revisit', 'slow', 'wasteful', 'repetitive', 'overhead', 'again', 'redo'],
+                response: `<strong>Does node revisiting make IDS slow?</strong><br><br>No! In an exponential search tree with branching factor $b$, the number of nodes at depth $d$ is $b^d$. The bottom level holds the overwhelming majority of all nodes.<br><br>For $b = 10$ and depth $d = 5$:<br>• BFS visits: <code>1 + 10 + 100 + 1000 + 10000 = 11,111</code> nodes.<br>• IDS visits: <code>5(1) + 4(10) + 3(100) + 2(1000) + 1(10000) = 12,345</code> nodes.<br><br>The overhead is only <strong>~11% extra node visits</strong>, which is a tiny price to pay for dramatic RAM savings!`
+            },
+            {
+                keywords: ['when', 'choose', 'vs', 'difference', 'compare', 'better', 'select', 'use case'],
+                response: `<strong>When should you choose IDS over BFS or DFS?</strong><br><br>• Choose <strong>IDS</strong> when the search space is large or infinite, solution depth is unknown, and RAM memory is limited.<br>• <strong>BFS</strong> consumes <code>O(b^d)</code> RAM and will crash on deep trees.<br>• <strong>DFS</strong> uses minimal RAM <code>O(b·d)</code>, but can get trapped down infinite non-goal paths.<br><br>⭐ <strong>IDS provides the best of both worlds:</strong> <code>O(b·d)</code> RAM like DFS + guaranteed shallowest-path optimality like BFS!`
+            },
+            {
+                keywords: ['space', 'memory', 'ram', 'complexity', 'obd', 'storage'],
+                response: `<strong>What is the Space Complexity of IDS?</strong><br><br>The space complexity of IDS is <strong class="text-emerald-400 font-mono">O(b · d)</strong>, where $b$ is the branching factor and $d$ is the depth of the shallowest goal.<br><br><strong>Why?</strong> In each iteration, IDS runs standard DFS. At any point in time, memory only needs to store the current path from the root down to the depth limit, plus unexpanded siblings at each level.`
+            },
+            {
+                keywords: ['time', 'big o', 'duration', 'runtime', 'steps'],
+                response: `<strong>What is the Time Complexity of IDS?</strong><br><br>The time complexity of IDS is <strong class="text-indigo-400 font-mono">O(b^d)</strong>.<br><br>Even though upper nodes are re-generated multiple times, the exponential growth of the bottom level dominates the runtime summation: <code>N = ∑ (d - i + 1) * b^i = O(b^d)</code>.`
+            },
+            {
+                keywords: ['weight', 'weighted', 'cost', 'dijkstra', 'unequal', 'edge cost', 'unit'],
+                response: `<strong>Is IDS optimal for graphs with unequal edge costs?</strong><br><br>No. Standard IDS (like standard BFS) assumes <strong>uniform step costs</strong> (i.e. every edge has a cost of 1).<br><br>If edge weights differ:<br>• Use <strong>Uniform Cost Search (Dijkstra's Algorithm)</strong>.<br>• Or use <strong>IDA* (Iterative Deepening A*)</strong>, which increments depth limits based on total path cost $f(n) = g(n) + h(n)$ instead of node depth count.`
+            },
+            {
+                keywords: ['complete', 'completeness', 'infinite', 'loop', 'trapped'],
+                response: `<strong>Is IDS Complete?</strong><br><br>Yes! IDS is <strong>complete</strong> when the branching factor $b$ is finite. Because the depth limit $L$ increases step-by-step ($L = 0, 1, 2, \dots$), it is impossible for the search to get trapped down an infinite branch without examining shallow goals first.`
+            }
+        ];
+
+        function handleChatSubmit(e) {
+            e.preventDefault();
+            const inputEl = document.getElementById('chat-input');
+            const userMsg = inputEl.value.trim();
+            if (!userMsg) return;
+
+            addChatMessage('user', userMsg);
+            inputEl.value = '';
+
+            // Generate bot response with small dynamic delay
+            setTimeout(() => {
+                const responseText = matchBotResponse(userMsg);
+                addChatMessage('bot', responseText);
+            }, 300);
+        }
+
+        function sendQuickPrompt(promptText) {
+            addChatMessage('user', promptText);
+            setTimeout(() => {
+                const responseText = matchBotResponse(promptText);
+                addChatMessage('bot', responseText);
+            }, 300);
+        }
+
+        function matchBotResponse(query) {
+            const cleanQuery = query.toLowerCase();
+            for (let item of botKnowledgeBase) {
+                if (item.keywords.some(kw => cleanQuery.includes(kw))) {
+                    return item.response;
+                }
+            }
+            return `I'm here to help with <strong>Iterative Deepening Search (IDS)</strong>! You can ask about:<br>• <strong>Memory & Space Complexity:</strong> <code>O(b·d)</code><br>• <strong>Time Complexity:</strong> <code>O(b^d)</code><br>• <strong>Why node revisiting isn't slow</strong><br>• <strong>Comparison between IDS, BFS, and DFS</strong><br>• <strong>Optimality & Completeness</strong>`;
+        }
+
+        function addChatMessage(sender, htmlContent) {
+            const chatBox = document.getElementById('chat-messages');
+            const msgDiv = document.createElement('div');
+            
+            if (sender === 'user') {
+                msgDiv.className = 'flex gap-3 items-start justify-end';
+                msgDiv.innerHTML = `
+                    <div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none px-4 py-3 text-xs leading-relaxed max-w-xl shadow-lg">
+                        ${htmlContent}
+                    </div>
+                    <div class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 text-xs font-bold">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                `;
+            } else {
+                msgDiv.className = 'flex gap-3 items-start max-w-3xl';
+                msgDiv.innerHTML = `
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600/30 border border-indigo-500/40 text-indigo-400 flex items-center justify-center shrink-0 text-sm font-bold">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-slate-200 leading-relaxed shadow-lg space-y-2">
+                        ${htmlContent}
+                    </div>
+                `;
+            }
+
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function clearChat() {
+            const chatBox = document.getElementById('chat-messages');
+            chatBox.innerHTML = `
+                <div class="flex gap-3 items-start max-w-3xl">
+                    <div class="w-8 h-8 rounded-xl bg-indigo-600/30 border border-indigo-500/40 text-indigo-400 flex items-center justify-center shrink-0 text-sm font-bold">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 text-xs text-slate-200 leading-relaxed shadow-lg space-y-2">
+                        <p>👋 Chat reset! Ask me any doubt about <strong>Iterative Deepening Search</strong>.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function resizeQuizCanvas() {
+            if (!quizCanvas) return;
+            const container = quizCanvas.parentElement;
+            if (container) {
+                quizCanvas.width = container.clientWidth;
+                quizCanvas.height = container.clientHeight;
+                renderQuizCanvas();
+            }
+        }
+
+        function generateNewQuizQuestion() {
+            const depth = Math.floor(Math.random() * 2) + 2; // Depth 2 or 3
+            const branch = 2; // Binary tree
+            const tree = generateTreeData(depth, branch);
+            const nodeKeys = Object.keys(tree);
+            const target = nodeKeys[Math.floor(Math.random() * (nodeKeys.length - 1)) + 1]; // Pick non-root target
+
+            const solutionSteps = generateIDSStepsForQuiz(tree, depth, target);
+            const lastStep = solutionSteps[solutionSteps.length - 1];
+
+            quizProblem = {
+                tree: tree,
+                depth: depth,
+                branch: branch,
+                target: target,
+                targetLabel: tree[target].label,
+                correctPath: lastStep.pathSoFar.map(id => tree[id].label),
+                correctVisitedCount: lastStep.totalVisited,
+                correctDepthLimit: lastStep.depthLimit
+            };
+
+            document.getElementById('quiz-question-box').innerHTML = `
+                <p>Given the binary search tree on the right, perform an <strong>Iterative Deepening Search (IDS)</strong> starting from root node <strong>'A'</strong> to find target node <strong class="text-emerald-400">'${quizProblem.targetLabel}'</strong>.</p>
+                <div class="pt-2 text-[11px] text-slate-400 border-t border-slate-800/80">
+                    Calculate: (1) The path to the target node, (2) Total node visits across all iterations, and (3) Depth limit $L$ when target is reached.
+                </div>
+            `;
+
+            document.getElementById('quiz-target-badge').innerText = `Target Node: ${quizProblem.targetLabel}`;
+            document.getElementById('quiz-input-path').value = '';
+            document.getElementById('quiz-input-visited').value = '';
+            document.getElementById('quiz-input-depth').value = '';
+
+            const feedbackBox = document.getElementById('quiz-feedback-box');
+            feedbackBox.classList.add('hidden');
+
+            resizeQuizCanvas();
+        }
+
+        function generateIDSStepsForQuiz(tree, depthLimit, target) {
+            let visitedCount = 0;
+            let found = false;
+            let lastStep = null;
+
+            for (let d = 0; d <= depthLimit; d++) {
+                function dfs(nodeId, currentDepth, path) {
+                    if (found) return;
+                    visitedCount++;
+                    let currentPath = [...path, nodeId];
+
+                    if (nodeId === target) {
+                        found = true;
+                        lastStep = {
+                            depthLimit: d,
+                            totalVisited: visitedCount,
+                            pathSoFar: currentPath
+                        };
+                        return;
+                    }
+
+                    if (currentDepth < d) {
+                        for (let child of tree[nodeId].children) {
+                            if (!found) dfs(child, currentDepth + 1, currentPath);
+                        }
+                    }
+                }
+                dfs('Node_A', 0, []);
+                if (found) break;
+            }
+            return [lastStep];
+        }
+
+        function submitQuizAnswer(e) {
+            e.preventDefault();
+            if (!quizProblem) return;
+
+            const userPathRaw = document.getElementById('quiz-input-path').value.trim();
+            const userVisited = parseInt(document.getElementById('quiz-input-visited').value);
+            const userDepth = parseInt(document.getElementById('quiz-input-depth').value);
+
+            const userPathClean = userPathRaw
+                .toUpperCase()
+                .replace(/[^A-Z]/g, ' ')
+                .trim()
+                .split(/\s+/);
+
+            const isPathCorrect = JSON.stringify(userPathClean) === JSON.stringify(quizProblem.correctPath);
+            const isVisitedCorrect = userVisited === quizProblem.correctVisitedCount;
+            const isDepthCorrect = userDepth === quizProblem.correctDepthLimit;
+
+            const feedbackBox = document.getElementById('quiz-feedback-box');
+            feedbackBox.classList.remove('hidden');
+
+            if (isPathCorrect && isVisitedCorrect && isDepthCorrect) {
+                feedbackBox.className = "bg-emerald-950/40 border border-emerald-500/40 rounded-2xl p-5 shadow-xl space-y-2";
+                feedbackBox.innerHTML = `
+                    <div class="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                        <i class="fa-solid fa-circle-check text-base"></i> Perfect! All Answers Correct!
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        Excellent work! You accurately traced the Iterative Deepening Search path, depth limit progression, and cumulative node visit count.
+                    </p>
+                `;
+            } else {
+                feedbackBox.className = "bg-rose-950/40 border border-rose-500/40 rounded-2xl p-5 shadow-xl space-y-3";
+                feedbackBox.innerHTML = `
+                    <div class="flex items-center gap-2 text-rose-400 font-bold text-sm">
+                        <i class="fa-solid fa-circle-xmark text-base"></i> Incorrect Solution
+                    </div>
+                    <div class="text-xs space-y-2 text-slate-300">
+                        <div class="p-2 rounded bg-slate-950/60 border border-slate-800">
+                            <strong>1. Path to Goal:</strong> 
+                            ${isPathCorrect ? '<span class="text-emerald-400 ml-1">Correct</span>' : `<span class="text-rose-400 ml-1">Incorrect</span> (Expected: <code class="text-indigo-300 font-mono">${quizProblem.correctPath.join(' → ')}</code>)`}
+                        </div>
+                        <div class="p-2 rounded bg-slate-950/60 border border-slate-800">
+                            <strong>2. Total Node Visits:</strong> 
+                            ${isVisitedCorrect ? '<span class="text-emerald-400 ml-1">Correct</span>' : `<span class="text-rose-400 ml-1">Incorrect</span> (Expected: <code class="text-indigo-300 font-mono">${quizProblem.correctVisitedCount}</code> visits)`}
+                        </div>
+                        <div class="p-2 rounded bg-slate-950/60 border border-slate-800">
+                            <strong>3. Target Depth Limit (L):</strong> 
+                            ${isDepthCorrect ? '<span class="text-emerald-400 ml-1">Correct</span>' : `<span class="text-rose-400 ml-1">Incorrect</span> (Expected: <code class="text-indigo-300 font-mono">L = ${quizProblem.correctDepthLimit}</code>)`}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderQuizCanvas() {
+            if (!quizCanvas || !quizCtx || !quizProblem) return;
+            quizCtx.clearRect(0, 0, quizCanvas.width, quizCanvas.height);
+
+            const width = quizCanvas.width;
+            const height = quizCanvas.height;
+            const tree = quizProblem.tree;
+            const maxDepth = quizProblem.depth;
+
+            const levels = {};
+            for (let id in tree) {
+                const node = tree[id];
+                if (!levels[node.depth]) levels[node.depth] = [];
+                levels[node.depth].push(id);
+            }
+
+            const totalLevels = maxDepth + 1;
+            const verticalPadding = 45;
+            const availableHeight = height - verticalPadding * 2;
+            const levelSpacing = totalLevels > 1 ? availableHeight / (totalLevels - 1) : 0;
+            const coords = {};
+
+            for (let depth = 0; depth <= maxDepth; depth++) {
+                const nodesAtLevel = levels[depth] || [];
+                const count = nodesAtLevel.length;
+                const y = verticalPadding + depth * levelSpacing;
+
+                nodesAtLevel.forEach((nodeId, idx) => {
+                    const x = (width / (count + 1)) * (idx + 1);
+                    coords[nodeId] = { x, y };
+                });
+            }
+
+            // Draw edges
+            for (let parentId in tree) {
+                const parent = tree[parentId];
+                const pCoord = coords[parentId];
+                parent.children.forEach(childId => {
+                    const cCoord = coords[childId];
+                    quizCtx.beginPath();
+                    quizCtx.moveTo(pCoord.x, pCoord.y);
+                    quizCtx.lineTo(cCoord.x, cCoord.y);
+                    quizCtx.strokeStyle = '#334155';
+                    quizCtx.lineWidth = 2;
+                    quizCtx.stroke();
+                });
+            }
+
+            // Draw nodes
+            const radius = 15;
+            for (let nodeId in tree) {
+                const node = tree[nodeId];
+                const coord = coords[nodeId];
+                const isTarget = (nodeId === quizProblem.target);
+
+                quizCtx.beginPath();
+                quizCtx.arc(coord.x, coord.y, radius, 0, 2 * Math.PI);
+
+                if (isTarget) {
+                    quizCtx.fillStyle = '#10b981';
+                    quizCtx.strokeStyle = '#34d399';
+                    quizCtx.lineWidth = 3;
+                } else {
+                    quizCtx.fillStyle = '#1e293b';
+                    quizCtx.strokeStyle = '#475569';
+                    quizCtx.lineWidth = 2;
+                }
+                quizCtx.fill();
+                quizCtx.stroke();
+
+                quizCtx.fillStyle = '#ffffff';
+                quizCtx.font = `bold ${radius * 0.75}px Inter, sans-serif`;
+                quizCtx.textAlign = 'center';
+                quizCtx.textBaseline = 'middle';
+                quizCtx.fillText(node.label, coord.x, coord.y);
+            }
+        }
+
+        /* --- Initialization on Load --- */
+        window.onload = function() {
+            canvas = document.getElementById('treeCanvas');
+            quizCanvas = document.getElementById('quizTreeCanvas');
+
+            if (canvas) {
+                ctx = canvas.getContext('2d');
+                window.addEventListener('resize', () => {
+                    resizeCanvas();
+                    resizeQuizCanvas();
+                });
+                
+                // Canvas Click Selector
+                canvas.addEventListener('click', (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const coords = getNodeCoordinates();
+
+                    for (let nodeId in coords) {
+                        const coord = coords[nodeId];
+                        const dist = Math.hypot(coord.x - x, coord.y - y);
+                        if (dist <= 22) {
+                            changeTargetNode(nodeId);
+                            break;
+                        }
+                    }
+                });
+            }
+
+            if (quizCanvas) {
+                quizCtx = quizCanvas.getContext('2d');
+            }
+
+            updateTreeTopology();
+            resizeCanvas();
+        };
+    </script>
+</body>
+</html>
