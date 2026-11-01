@@ -10,7 +10,7 @@ An interactive, visual educational web application for exploring **Iterative Dee
 - **Practice & Quiz Mode**: Interactive problem generator to test manual execution skills.
 
 ## 🚀 Live Demo
-Check out the live interactive explainer here: [https://YOUR-USERNAME.github.io/ids-explainer/](https://YOUR-USERNAME.github.io/ids-explainer/)
+Check out the live interactive explainer here: [[https://YOUR-USERNAME.github.io/ids-explainer/](https://YOUR-USERNAME.github.io/ids-explainer/)](https://krithyaja.github.io/Explainer-IDS/)
 
 ## 🛠️ Built With
 - **HTML5 Canvas API** (Custom 2D Graph Rendering)
